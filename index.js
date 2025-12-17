@@ -55,7 +55,7 @@ app.post("/login", async (req, res) => {
     // - Qui viene fatto un confronto in chiaro.
     // - Se in DB hai password hashate (consigliato), sostituisci questo controllo
     //   con un confronto usando bcrypt (es. bcrypt.compare(password, utente.password)).
-    if (utente.pwd !== password) {
+    if (utente.pwd.trim() !== password) {
       return res.status(401).json({ error: "Credenziali non valide" });
     }
 
