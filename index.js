@@ -46,7 +46,7 @@ app.post("/login", async (req, res) => {
       await sql`SELECT id, username, pwd FROM utenti WHERE username = ${username}`;
 
     if (result.length === 0) {
-      return res.status(401).json({ error: "Credenziali non valide" });
+      return res.status(401).json({ error: "Credenziali non valide!!" });
     }
 
     const utente = result[0];
