@@ -4,7 +4,7 @@ const { neon } = require("@neondatabase/serverless");
 const cors = require('cors');
 const loginController = require('./controller/loginController');
 const registrationController = require('./controller/registrationController');
-const userController = require('./controller/utenticontroller');
+const userController = require('./controller/userController');
 
 const app = express();
 const sql = neon(process.env.DATABASE_URL); // Usa la tua DATABASE_URL
