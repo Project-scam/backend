@@ -26,7 +26,7 @@ const loginController = (sql) => {
 
             if (result.length === 0) {
                 // Messaggio generico per non rivelare se l'utente esiste o meno
-                return res.status(401).json({ error: "Credenziali non valide" });
+                return res.status(401).json({ error: "Credenziali non valide!!" });
             }
 
             const utente = result[0];
