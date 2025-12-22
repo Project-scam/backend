@@ -22,7 +22,7 @@ const loginController = (sql) => {
         try {
             // Cerca l'utente per username
             const result =
-                await sql`SELECT id, username, pwd FROM utenti WHERE username = ${username}`;
+                await sql`SELECT id, username, pwd, stato, ruolo FROM utenti WHERE username = ${username}`;
 
             if (result.length === 0) {
                 // Messaggio generico per non rivelare se l'utente esiste o meno
@@ -37,12 +37,16 @@ const loginController = (sql) => {
                 return res.status(401).json({ error: "Credenziali non valide" });
             }
 
+            await sql`update utenti set stato = 'L' where id= ${utente.id}`
+
             // Login successo: restituisce un messaggio e i dati utente (senza password)
             return res.json({
                 message: "Login effettuato con successo",
                 user: {
                     id: utente.id,
                     username: utente.username,
+                    stato: 'L',
+                    ruolo: utente.ruolo
                 },
             });
         } catch (err) {
