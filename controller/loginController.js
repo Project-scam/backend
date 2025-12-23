@@ -1,6 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const bcrypt = require("bcrypt");
+const jwt = require("jsonwebtoken");
 
 /**
  * Crea e configura il router per la rotta di login.
@@ -39,9 +40,17 @@ const loginController = (sql) => {
 
             await sql`update utenti set stato = 'L' where id= ${utente.id}`
 
+            // Genera il Token JWT per la gestione della Session
+            const token = jwt.sign(
+                { id: utente.id, username: utente.username, ruolo: utente.ruolo },
+                process.env.JWT_SECRET || "segreto_super_sicuro_da_cambiare",
+                { expiresIn: "1h" }
+            );
+
             // Login successo: restituisce un messaggio e i dati utente (senza password)
             return res.json({
                 message: "Login effettuato con successo",
+                token: token,
                 user: {
                     id: utente.id,
                     username: utente.username,

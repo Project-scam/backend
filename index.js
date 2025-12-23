@@ -7,6 +7,12 @@ const registrationController = require('./controller/registrationController');
 const userController = require('./controller/userController');
 
 const app = express();
+
+// Controllo di sicurezza all'avvio
+if (!process.env.DATABASE_URL) {
+    console.error("❌ ERRORE FATALE: La variabile DATABASE_URL non è definita nel file .env!");
+    process.exit(1);
+}
 const sql = neon(process.env.DATABASE_URL); // Usa la tua DATABASE_URL
 
 //Abilita CORS per tutte le rotte 
