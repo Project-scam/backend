@@ -18,7 +18,7 @@ const server = http.createServer(app);
 // 2. Configuriamo Socket.io attanccandolo al server HTTP
 const io = new Server(server, {
     cors: {
-        origin: "http://localhost:5173",
+        origin: "*",
         methods: ["GET", "POST"]
     }
 });
@@ -48,10 +48,17 @@ app.use("/register", registrationRouter);
 const utentiRouter = userController(sql);
 app.use("/utenti", utentiRouter);
 
-if (process.env.NODE_ENV !== "production") {
+/*if (process.env.NODE_ENV !== "production") {
     const PORT = process.env.PORT || 3000;
     server.listen(PORT, () => {
         console.log("Server su http://localhost:3000");
     });
-}
-module.exports = app;
+}*/
+const PORT = process.env.PORT || 3000;
+
+server.listen(PORT, () => {
+    console.log(`🚀 Server running on port ${PORT}`);
+});
+
+
+module.exports = server;
