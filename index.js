@@ -5,7 +5,7 @@ const { Server } = require("socket.io");
 const { neon } = require("@neondatabase/serverless");
 const cors = require('cors');
 const loginController = require('./controller/loginController');
-const logoutController = require("./controller/logoutController");
+const logoutController = require('./controller/logoutController');
 const registrationController = require('./controller/registrationController');
 const userController = require('./controller/userController');
 const socketController = require("./controller/socketController");
@@ -64,6 +64,5 @@ const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
     console.log(`🚀 Server running on port ${PORT}`);
 });
-
 
 module.exports = server;
