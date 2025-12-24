@@ -5,6 +5,7 @@ const { Server } = require("socket.io");
 const { neon } = require("@neondatabase/serverless");
 const cors = require('cors');
 const loginController = require('./controller/loginController');
+const logoutController = require("./controller/logoutController");
 const registrationController = require('./controller/registrationController');
 const userController = require('./controller/userController');
 const socketController = require("./controller/socketController");
@@ -39,6 +40,10 @@ app.use(express.json());
 // Usa il router per la rotta di login
 const loginRouter = loginController(sql);
 app.use("/login", loginRouter);
+
+// Usa il router per la rotta di logour
+const logoutRouter = logoutController(sql);
+app.use("/logout", logoutRouter);
 
 // Usa il router per la rotta di registrazione
 const registrationRouter = registrationController(sql);
