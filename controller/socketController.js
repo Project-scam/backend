@@ -33,12 +33,12 @@ const socketController = (io) => {
             console.log(onlineUsers);
 
             // Notifica a TUTTI i client la nuova lista utenti aggiornata
-            io.emit("user_list_update", Array.from(onlineUsers.values()));
+            io.emit("users_list_update", Array.from(onlineUsers.values()));
         });
 
         // 2. Richiesta lista utenti (per chi entra dopo o ricarica la pagina)
         socket.on("get_users", () => {
-            socket.emit("user_list_update", Array.from(onlineUsers.values()));
+            socket.emit("users_list_update", Array.from(onlineUsers.values()));
         });
 
         // 3. Gestione Sfida: Invio
@@ -73,7 +73,7 @@ const socketController = (io) => {
                 onlineUsers.delete(socket.id);
 
                 // Aggiorna la lista per tutti gli altri
-                io.emit("user_list_update", Array.from(onlineUsers.values()));
+                io.emit("users_list_update", Array.from(onlineUsers.values()));
             }
         });
     });
