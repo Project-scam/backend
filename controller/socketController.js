@@ -30,6 +30,7 @@ const socketController = (io) => {
             };
 
             onlineUsers.set(socket.id, user);
+            console.log(onlineUsers);
 
             // Notifica a TUTTI i client la nuova lista utenti aggiornata
             io.emit("user_list_update", Array.from(onlineUsers.values()));
