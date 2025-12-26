@@ -34,7 +34,11 @@ const sql = neon(process.env.DATABASE_URL); // Usa la tua DATABASE_URL
 socketController(io);
 
 //Abilita CORS per tutte le rotte 
-app.use(cors());
+app.use(cors({
+    origin: "*",
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"]
+}));
 app.use(express.json());
 
 // Usa il router per la rotta di login
