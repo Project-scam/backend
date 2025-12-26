@@ -4,7 +4,7 @@
 //==============================================================
 
 /**
- * Gestisce tutta la logica WebSocket per la lobby e il gioco.
+ * Gestisce tutta la logica WebSocket per la lista  e il gioco.
  * Mantiene in memoria la lista degli utenti connessi.
  * 
  * @param {object} io - L'istanza del server Socket.io
@@ -16,13 +16,15 @@ const socketController = (io) => {
     io.on("connection", (socket) => {
         console.log(`[SOCKET] Nuova connessione: ${socket.id}`);
 
-        // 1. Registrazione utente nella lobby
+        // 1. Registrazione utente nella lista
         // Quando il frontend si connette e invia "register_user"
         socket.on("register_user", (userData) => {
-            // userData dovrebbe contenere { username: "Mario" }
+            // Gestisce sia se userData è una stringa (da App.jsx attuale) sia se è un oggetto
+            const username = typeof userData === 'string' ? userData : userData?.username;
+
             // Salviamo anche il socketId per poterlo contattare privatamente
             const user = {
-                ...userData,
+                username: username,
                 socketId: socket.id,
                 status: "online"
             };
