@@ -57,13 +57,21 @@ const socketController = (io) => {
         // 4. Gestione Sfida: Accettazione
         socket.on("accept_challenge", ({ challengerId }) => {
             const accepter = onlineUsers.get(socket.id);
+            const challenger = onlineUsers.get(challengerId);
 
-            if (accepter) {
+            if (accepter && challenger) {
+                // Aggiorna lo stato di entrambi gli utenti a "busy"
+                accepter.status = "busy";
+                challenger.status = "busy";
+
                 // Notifica lo sfidante che la sfida è stata accettata
                 io.to(challengerId).emit("challenge_accepted", {
                     opponent: accepter.username,
                     opponentSocketId: socket.id
                 });
+
+                // Notifica a TUTTI i client la nuova lista utenti aggiornata (per UserList)
+                io.emit("users_list_update", Array.from(onlineUsers.values()));
             }
         });
 
