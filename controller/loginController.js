@@ -46,6 +46,7 @@ const loginController = (sql) => {
                 process.env.JWT_SECRET || "segreto_super_sicuro_da_cambiare",
                 { expiresIn: "1h" }
             );
+            console.log(token);
 
             // Imposta il cookie HttpOnly
             res.cookie("token", token, {
