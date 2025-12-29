@@ -50,7 +50,7 @@ const registrationController = (sql) => {
                 httpOnly: true,
                 secure: process.env.NODE_ENV === "production",
                 maxAge: 3600000,
-                sameSite: "strict"
+                sameSite: process.env.NODE_ENV === "production" ? "none" : "lax"
             });
 
             // 4. Restituisci una risposta di successo

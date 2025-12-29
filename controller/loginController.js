@@ -56,10 +56,9 @@ const loginController = (sql) => {
                 httpOnly: true, // Fondamentale: impedisce l'accesso via JS
                 secure: process.env.NODE_ENV === "production", // Usa HTTPS in produzione
                 maxAge: 3600000, // 1 ora in millisecondi
-                sameSite: "strict" // Protezione CSRF
+                sameSite: process.env.NODE_ENV === "production" ? "none" : "lax" // "none" per cross-site (Vercel->Render), "lax" per localhost
             });
             console.log("[LOGIN] Cookie HttpOnly impostato nella risposta");
-            console.log("token", token);
 
             // Login successo: restituisce un messaggio e i dati utente (senza password)
             return res.json({

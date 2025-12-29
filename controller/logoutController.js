@@ -32,7 +32,7 @@ const logoutController = (sql) => {
             res.clearCookie("token", {
                 httpOnly: true,
                 secure: process.env.NODE_ENV === "production",
-                sameSite: "strict"
+                sameSite: process.env.NODE_ENV === "production" ? "none" : "lax"
             });
 
             console.log("Logout effettuato con successo"); // Ora questo apparirà nella console!
