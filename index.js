@@ -21,8 +21,9 @@ const server = http.createServer(app);
 // 2. Configuriamo Socket.io attanccandolo al server HTTP
 const io = new Server(server, {
     cors: {
-        origin: "*",
-        methods: ["GET", "POST"]
+        origin: FRONTEND_URL, // Usa l'URL corretto (localhost o produzione)
+        methods: ["GET", "POST"],
+        credentials: true // Permette, se necessario, il passaggio di cookie anche nel handshake socket
     }
 });
 // Controllo di sicurezza all'avvio
