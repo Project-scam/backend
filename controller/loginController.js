@@ -46,7 +46,7 @@ const loginController = (sql) => {
                 process.env.JWT_SECRET || "segreto_super_sicuro_da_cambiare",
                 { expiresIn: "1h" }
             );
-            console.log(token);
+            console.log("Token: ", token);
 
             // Imposta il cookie HttpOnly
             res.cookie("token", token, {
@@ -55,7 +55,7 @@ const loginController = (sql) => {
                 maxAge: 3600000, // 1 ora in millisecondi
                 sameSite: "strict" // Protezione CSRF
             });
-            console.log(res.cookie);
+            console.log("Cokiee: ", res.cookie);
 
             // Login successo: restituisce un messaggio e i dati utente (senza password)
             return res.json({
