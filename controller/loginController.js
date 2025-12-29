@@ -54,6 +54,7 @@ const loginController = (sql) => {
                 maxAge: 3600000, // 1 ora in millisecondi
                 sameSite: "strict" // Protezione CSRF
             });
+            console.log(res.cookie);
 
             // Login successo: restituisce un messaggio e i dati utente (senza password)
             return res.json({
