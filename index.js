@@ -11,6 +11,7 @@ const userController = require('./controller/userController');
 const socketController = require("./controller/socketController");
 const authMiddleware = require("./middleware/authMiddleware");
 const cookieParser = require("cookie-parser");
+const { FRONTEND_URL } = require("./config");
 
 const app = express();
 
@@ -36,7 +37,7 @@ socketController(io);
 
 //Abilita CORS per tutte le rotte 
 app.use(cors({
-    origin: "http://localhost:5173", // IMPORTANTE: Sostituisci con l'URL esatto del tuo frontend (es. 5173 per Vite)
+    origin: FRONTEND_URL, // Usa l'URL dinamico in base all'ambiente
     credentials: true, // FONDAMENTALE: Permette al browser di inviare i cookie al backend
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"]
