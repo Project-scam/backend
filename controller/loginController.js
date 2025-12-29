@@ -12,6 +12,7 @@ const loginController = (sql) => {
     // Login utente
     // La rotta è POST / dato che il prefisso /login verrà usato in index.js
     router.post("/", async (req, res) => {
+        console.log("[LOGIN] Richiesta ricevuta");
         const { username, password } = req.body || {};
 
         if (!username || !password) {
@@ -26,6 +27,7 @@ const loginController = (sql) => {
                 await sql`SELECT id, username, pwd, stato, ruolo FROM utenti WHERE username = ${username}`;
 
             if (result.length === 0) {
+                console.log("[LOGIN] Utente non trovato:", username);
                 // Messaggio generico per non rivelare se l'utente esiste o meno
                 return res.status(401).json({ error: "Credenziali non valide!!" });
             }
@@ -35,6 +37,7 @@ const loginController = (sql) => {
             // Confronta la password fornita con l'hash salvato nel DB
             const passwordMatch = await bcrypt.compare(password, utente.pwd);
             if (!passwordMatch) {
+                console.log("[LOGIN] Password errata per:", username);
                 return res.status(401).json({ error: "Credenziali non valide" });
             }
 
@@ -46,7 +49,7 @@ const loginController = (sql) => {
                 process.env.JWT_SECRET || "segreto_super_sicuro_da_cambiare",
                 { expiresIn: "1h" }
             );
-            console.log("Token: ", token);
+            console.log("[LOGIN] Token generato con successo");
 
             // Imposta il cookie HttpOnly
             res.cookie("token", token, {
@@ -55,7 +58,7 @@ const loginController = (sql) => {
                 maxAge: 3600000, // 1 ora in millisecondi
                 sameSite: "strict" // Protezione CSRF
             });
-            console.log("Cokiee: ", res.cookie);
+            console.log("[LOGIN] Cookie HttpOnly impostato nella risposta");
 
             // Login successo: restituisce un messaggio e i dati utente (senza password)
             return res.json({
