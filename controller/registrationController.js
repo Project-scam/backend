@@ -1,5 +1,6 @@
 const express = require("express");
 const bcrypt = require("bcrypt");
+const jwt = require("jsonwebtoken");
 const router = express.Router();
 
 const SALT_ROUNDS = 10; // Numero di cicli per l'hashing. 10 è un buon punto di partenza.
@@ -35,10 +36,27 @@ const registrationController = (sql) => {
             const result =
                 await sql`INSERT INTO utenti (username, pwd, stato, ruolo) VALUES (${username}, ${hashedPassword}, 'U', 'user') RETURNING id, username, stato, ruolo`; // status default U, ci penserà a gestirlo il websocket
 
+            const utente = result[0];
+
+            // Genera il Token JWT (lo stesso meccanismo del Login)
+            const token = jwt.sign(
+                { id: utente.id, username: utente.username, ruolo: utente.ruolo },
+                process.env.JWT_SECRET || "segreto_super_sicuro_da_cambiare",
+                { expiresIn: "1h" }
+            );
+
+            // Imposta il cookie HttpOnly
+            res.cookie("token", token, {
+                httpOnly: true,
+                secure: process.env.NODE_ENV === "production",
+                maxAge: 3600000,
+                sameSite: "strict"
+            });
+
             // 4. Restituisci una risposta di successo
             return res.status(201).json({
                 message: "Utente registrato con successo",
-                user: result[0],
+                user: utente,
             });
         } catch (err) {
             console.error("Errore durante la registrazione:", err);

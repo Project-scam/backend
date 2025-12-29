@@ -47,10 +47,17 @@ const loginController = (sql) => {
                 { expiresIn: "1h" }
             );
 
+            // Imposta il cookie HttpOnly
+            res.cookie("token", token, {
+                httpOnly: true, // Fondamentale: impedisce l'accesso via JS
+                secure: process.env.NODE_ENV === "production", // Usa HTTPS in produzione
+                maxAge: 3600000, // 1 ora in millisecondi
+                sameSite: "strict" // Protezione CSRF
+            });
+
             // Login successo: restituisce un messaggio e i dati utente (senza password)
             return res.json({
                 message: "Login effettuato con successo",
-                token: token,
                 user: {
                     id: utente.id,
                     username: utente.username,

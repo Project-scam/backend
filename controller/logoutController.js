@@ -10,11 +10,10 @@ const jwt = require("jsonwebtoken");
 const logoutController = (sql) => {
     // Rotta POST / (che sarà montata su /logout)
     router.post("/", async (req, res) => {
-        const authHeader = req.headers['authorization'];
-        const token = authHeader && authHeader.split(' ')[1]; // Bearer TOKEN
+        const token = req.cookies.token; // Recupera il token dal cookie
 
         if (!token) {
-            return res.status(200).json({ message: "Logout effettuato (nessun token)" });
+            return res.status(200).json({ message: "Logout effettuato (nessun token trovato)" });
         }
 
         try {
@@ -22,11 +21,19 @@ const logoutController = (sql) => {
             jwt.verify(token, process.env.JWT_SECRET || "segreto_super_sicuro_da_cambiare", async (err, user) => {
                 if (err) {
                     // Se il token è scaduto, l'utente è comunque "fuori", quindi rispondiamo OK
+                    res.clearCookie("token"); // Pulisce comunque il cookie
                     return res.status(200).json({ message: "Logout effettuato (token scaduto)" });
                 }
 
                 // Aggiorna lo stato nel DB a 'U' (Unlogged)
                 await sql`UPDATE utenti SET stato = 'U' WHERE id = ${user.id}`;
+
+                // Cancella il cookie HttpOnly
+                res.clearCookie("token", {
+                    httpOnly: true,
+                    secure: process.env.NODE_ENV === "production",
+                    sameSite: "strict"
+                });
 
                 return res.json({ message: "Logout effettuato con successo" });
             });
