@@ -14,6 +14,7 @@ const cookieParser = require("cookie-parser");
 const { FRONTEND_URL } = require("./config");
 
 const app = express();
+app.set("trust proxy", 1); // FONDAMENTALE per i cookie Secure/SameSite:None su Render/Vercel
 
 // 1. Creiamo esplicitamente il server HTTP wrappando l'app Express
 const server = http.createServer(app);

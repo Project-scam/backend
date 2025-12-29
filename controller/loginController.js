@@ -2,6 +2,7 @@ const express = require("express");
 const router = express.Router();
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
+const authMiddleware = require("../middleware/authMiddleware");
 
 /**
  * Crea e configura il router per la rotta di login.
@@ -9,6 +10,12 @@ const jwt = require("jsonwebtoken");
  * @returns {object} Il router di Express configurato.
  */
 const loginController = (sql) => {
+    // Rotta per verificare la sessione al caricamento della pagina
+    // GET /login/verify
+    router.get("/verify", authMiddleware, (req, res) => {
+        res.json({ user: req.user });
+    });
+
     // Login utente
     // La rotta è POST / dato che il prefisso /login verrà usato in index.js
     router.post("/", async (req, res) => {
@@ -51,12 +58,15 @@ const loginController = (sql) => {
             );
             console.log("[LOGIN] Token generato con successo");
 
+            const isProduction = process.env.NODE_ENV === "production";
+            console.log(`[LOGIN] Configurazione Cookie - Production: ${isProduction}, SameSite: ${isProduction ? "none" : "lax"}`);
+
             // Imposta il cookie HttpOnly
             res.cookie("token", token, {
                 httpOnly: true, // Fondamentale: impedisce l'accesso via JS
-                secure: process.env.NODE_ENV === "production", // Usa HTTPS in produzione
+                secure: isProduction, // Usa HTTPS in produzione
                 maxAge: 3600000, // 1 ora in millisecondi
-                sameSite: process.env.NODE_ENV === "production" ? "none" : "lax" // "none" per cross-site (Vercel->Render), "lax" per localhost
+                sameSite: isProduction ? "none" : "lax" // "none" per cross-site (Vercel->Render), "lax" per localhost
             });
             console.log("[LOGIN] Cookie HttpOnly impostato nella risposta");
 
