@@ -57,12 +57,19 @@ const socketController = (io) => {
         // 4. Gestione Sfida: Accettazione
         socket.on("accept_challenge", ({ challengerId }) => {
             const accepter = onlineUsers.get(socket.id);
+            const challenger = onlineUsers.get(challengerId);
 
-            if (accepter) {
+            if (accepter && challenger) {
                 // Notifica lo sfidante che la sfida è stata accettata
                 io.to(challengerId).emit("challenge_accepted", {
                     opponent: accepter.username,
                     opponentSocketId: socket.id
+                });
+
+                // Notifica anche chi ha accettato (l'accepter)
+                io.to(socket.id).emit("challenge_accepted", {
+                    opponent: challenger.username,
+                    opponentSocketId: challengerId
                 });
             }
         });
