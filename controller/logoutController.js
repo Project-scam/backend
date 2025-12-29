@@ -1,7 +1,7 @@
 //=============================
 // File: logoutController.js
 // script che esegue il logout
-//=============================
+//==========================
 
 const express = require("express");
 const router = express.Router();
