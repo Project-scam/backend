@@ -59,6 +59,7 @@ const loginController = (sql) => {
                 sameSite: "strict" // Protezione CSRF
             });
             console.log("[LOGIN] Cookie HttpOnly impostato nella risposta");
+            console.log("token", token);
 
             // Login successo: restituisce un messaggio e i dati utente (senza password)
             return res.json({
