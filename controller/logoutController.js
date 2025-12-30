@@ -11,8 +11,12 @@ const logoutController = (sql) => {
     // Rotta POST / (che sarà montata su /logout)
     router.post("/", async (req, res) => {
         console.log("[LOGOUT] Richiesta ricevuta");
-        const token = req.cookies.token; // Recupera il token dal cookie
+        // DEBUG: Stampa l'origine e i cookie grezzi ricevuti
+        console.log("[LOGOUT] Origin:", req.headers.origin);
+        console.log("[LOGOUT] Raw Cookie Header:", req.headers.cookie);
 
+        const token = req.cookies.token; // Recupera il token dal cookie
+        
         if (!token) {
             console.log("[LOGOUT] Nessun token trovato nei cookie");
             return res.status(200).json({ message: "Logout effettuato (nessun token trovato)" });
