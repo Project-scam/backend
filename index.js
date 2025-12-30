@@ -8,6 +8,7 @@ const loginController = require('./controller/loginController');
 const logoutController = require('./controller/logoutController');
 const registrationController = require('./controller/registrationController');
 const userController = require('./controller/userController');
+const rankingController = require('./controller/rankingController');
 const socketController = require("./controller/socketController");
 const authMiddleware = require("./middleware/authMiddleware");
 const cookieParser = require("cookie-parser");
@@ -62,6 +63,10 @@ app.use("/register", registrationRouter);
 // Usa il router per le rotte degli utenti
 const utentiRouter = userController(sql);
 app.use("/utenti", authMiddleware, utentiRouter); // La rotta ora è protetta dal middleware
+
+// Usa il router per la classifica
+const rankingRouter = rankingController(sql);
+app.use("/ranking", authMiddleware, rankingRouter);
 
 /*if (process.env.NODE_ENV !== "production") {
     const PORT = process.env.PORT || 3000;
