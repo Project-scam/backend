@@ -41,7 +41,11 @@ const logoutController = (sql) => {
         } catch (error) {
             console.error("[LOGOUT] Errore o token scaduto:", error.message);
             // In caso di errore (es. token scaduto), puliamo comunque il cookie
-            res.clearCookie("token");
+            res.clearCookie("token", {
+                httpOnly: true,
+                secure: process.env.NODE_ENV === "production",
+                sameSite: process.env.NODE_ENV === "production" ? "none" : "lax"
+            });
             return res.status(200).json({ message: "Logout effettuato (token non valido)" });
         }
     });
