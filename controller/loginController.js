@@ -12,8 +12,19 @@ const authMiddleware = require("../middleware/authMiddleware");
 const loginController = (sql) => {
     // Rotta per verificare la sessione al caricamento della pagina
     // GET /login/verify
-    router.get("/verify", authMiddleware, (req, res) => {
-        res.json({ user: req.user });
+    router.get("/verify", (req, res) => {
+        const token = req.cookies.token;
+
+        if (!token) {
+            return res.json({ user: null });
+        }
+
+        try {
+            const decoded = jwt.verify(token, process.env.JWT_SECRET || "segreto_super_sicuro_da_cambiare");
+            res.json({ user: decoded });
+        } catch (err) {
+            res.json({ user: null });
+        }
     });
 
     // Login utente
