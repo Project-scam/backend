@@ -87,6 +87,12 @@ const socketController = (io) => {
 
     // 6. Gestione Codice Segreto in 1vs1: Maker invia codice al Breaker
     socket.on("send_secret_code", ({ targetSocketId, secretCode }) => {
+      // ✅ Validazione parametri
+      if (!targetSocketId || !secretCode || !Array.isArray(secretCode)) {
+        console.error("[SOCKET] Parametri invalidi per send_secret_code");
+        return;
+      }
+
       const sender = onlineUsers.get(socket.id);
       if (sender && onlineUsers.has(targetSocketId)) {
         // Invia il codice segreto SOLO al breaker
@@ -102,6 +108,12 @@ const socketController = (io) => {
 
     // 7. Gestione Tentativo in 1vs1: Breaker invia tentativo al Maker per feedback
     socket.on("send_guess", ({ targetSocketId, guess, feedback }) => {
+      // ✅ Validazione parametri
+      if (!targetSocketId || !guess || !Array.isArray(guess) || !feedback) {
+        console.error("[SOCKET] Parametri invalidi per send_guess");
+        return;
+      }
+
       const sender = onlineUsers.get(socket.id);
       if (sender && onlineUsers.has(targetSocketId)) {
         // Invia il tentativo e feedback al maker (per visualizzazione)
@@ -117,6 +129,16 @@ const socketController = (io) => {
     socket.on(
       "game_ended",
       ({ targetSocketId, gameWon, guessesCount, winner }) => {
+        // ✅ Validazione parametri
+        if (
+          !targetSocketId ||
+          gameWon === undefined ||
+          guessesCount === undefined
+        ) {
+          console.error("[SOCKET] Parametri invalidi per game_ended");
+          return;
+        }
+
         const sender = onlineUsers.get(socket.id);
         if (sender && onlineUsers.has(targetSocketId)) {
           const opponent = onlineUsers.get(targetSocketId);

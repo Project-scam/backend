@@ -24,6 +24,15 @@ const pointsController = (sql) => {
         });
       }
 
+      // ✅ SICUREZZA: Verifica che l'utente autenticato possa aggiornare solo i propri punti
+      // (oppure è un admin - da implementare se necessario)
+      const authenticatedUsername = req.user?.username;
+      if (authenticatedUsername !== username) {
+        return res.status(403).json({
+          error: "Non autorizzato: puoi aggiornare solo i tuoi punti",
+        });
+      }
+
       // Verifica che l'utente esista
       const user = await sql`
                 SELECT id, username, punti 
