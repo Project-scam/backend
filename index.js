@@ -3,12 +3,13 @@ const express = require("express");
 const http = require("http"); // Modulo nativo di Node.js per creare server http di basso livello necessario per Socket.io
 const { Server } = require("socket.io");
 const { neon } = require("@neondatabase/serverless");
-const cors = require('cors');
-const loginController = require('./controller/loginController');
-const logoutController = require('./controller/logoutController');
-const registrationController = require('./controller/registrationController');
-const userController = require('./controller/userController');
-const rankingController = require('./controller/rankingController');
+const cors = require("cors");
+const loginController = require("./controller/loginController");
+const logoutController = require("./controller/logoutController");
+const registrationController = require("./controller/registrationController");
+const userController = require("./controller/userController");
+const rankingController = require("./controller/rankingController");
+const pointsController = require("./controller/pointsController");
 const socketController = require("./controller/socketController");
 const authMiddleware = require("./middleware/authMiddleware");
 const cookieParser = require("cookie-parser");
@@ -22,29 +23,33 @@ const server = http.createServer(app);
 
 // 2. Configuriamo Socket.io attanccandolo al server HTTP
 const io = new Server(server, {
-    cors: {
-        origin: FRONTEND_URL, // Usa l'URL corretto (localhost o produzione)
-        methods: ["GET", "POST"],
-        credentials: true // Permette, se necessario, il passaggio di cookie anche nel handshake socket
-    }
+  cors: {
+    origin: FRONTEND_URL, // Usa l'URL corretto (localhost o produzione)
+    methods: ["GET", "POST"],
+    credentials: true, // Permette, se necessario, il passaggio di cookie anche nel handshake socket
+  },
 });
 // Controllo di sicurezza all'avvio
 if (!process.env.DATABASE_URL) {
-    console.error("❌ ERRORE FATALE: La variabile DATABASE_URL non è definita nel file .env!");
-    process.exit(1);
+  console.error(
+    "❌ ERRORE FATALE: La variabile DATABASE_URL non è definita nel file .env!"
+  );
+  process.exit(1);
 }
 const sql = neon(process.env.DATABASE_URL); // Usa la tua DATABASE_URL
 
 // Passiamo l'istanza "io" al controller dei socket
 socketController(io);
 
-//Abilita CORS per tutte le rotte 
-app.use(cors({
+//Abilita CORS per tutte le rotte
+app.use(
+  cors({
     origin: FRONTEND_URL, // Usa l'URL dinamico in base all'ambiente
     credentials: true, // FONDAMENTALE: Permette al browser di inviare i cookie al backend
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization"]
-}));
+    allowedHeaders: ["Content-Type", "Authorization"],
+  })
+);
 app.use(express.json());
 app.use(cookieParser()); // Abilito la lettura di req.cookies
 
@@ -68,6 +73,10 @@ app.use("/utenti", authMiddleware, utentiRouter); // La rotta ora è protetta da
 const rankingRouter = rankingController(sql);
 app.use("/ranking", authMiddleware, rankingRouter);
 
+// Usa il router per i punti
+const pointsRouter = pointsController(sql);
+app.use("/points", authMiddleware, pointsRouter);
+
 /*if (process.env.NODE_ENV !== "production") {
     const PORT = process.env.PORT || 3000;
     server.listen(PORT, () => {
@@ -77,7 +86,7 @@ app.use("/ranking", authMiddleware, rankingRouter);
 const PORT = process.env.PORT || 3000;
 
 server.listen(PORT, () => {
-    console.log(`🚀 Server running on port ${PORT}`);
+  console.log(`🚀 Server running on port ${PORT}`);
 });
 
 module.exports = server;
