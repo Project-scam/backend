@@ -7,20 +7,20 @@ const router = express.Router();
  * @returns {object} Il router di Express configurato.
  */
 const userController = (sql) => {
-    // Leggere tutti gli utenti (con campi sicuri e ordinati)
-    router.get("/", async (req, res) => {
-        try {
-            // Seleziona solo i campi sicuri e utili, ordinandoli per stato.
-            const utenti =
-                await sql`SELECT id, username, punti, stato FROM utenti ORDER BY stato, punti DESC`;
-            res.json(utenti);
-        } catch (err) {
-            console.error("Errore query utenti:", err);
-            res.status(500).json({ error: "Errore nel leggere la tabella utenti" });
-        }
-    });
+  // Leggere tutti gli utenti (con campi sicuri e ordinati)
+  router.get("/", async (req, res) => {
+    try {
+      // Seleziona solo i campi sicuri e utili, ordinandoli per stato.
+      const utenti =
+        await sql`SELECT id, username, punti, stato FROM utenti ORDER BY punti DESC`;
+      res.json(utenti);
+    } catch (err) {
+      console.error("Errore query utenti:", err);
+      res.status(500).json({ error: "Errore nel leggere la tabella utenti" });
+    }
+  });
 
-    return router;
+  return router;
 };
 
 module.exports = userController;
