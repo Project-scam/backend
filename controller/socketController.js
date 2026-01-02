@@ -31,15 +31,26 @@ const socketController = (io) => {
       };
 
       onlineUsers.set(socket.id, user);
-      console.log(onlineUsers);
+      const usersList = Array.from(onlineUsers.values());
+      console.log(
+        `[SOCKET] Utente registrato: ${username} (${socket.id}), totale utenti online: ${usersList.length}`
+      );
+      console.log(
+        "[SOCKET] Lista utenti:",
+        usersList.map((u) => ({ username: u.username, socketId: u.socketId }))
+      );
 
       // Notifica a TUTTI i client la nuova lista utenti aggiornata
-      io.emit("users_list_update", Array.from(onlineUsers.values()));
+      io.emit("users_list_update", usersList);
     });
 
     // 2. Richiesta lista utenti (per chi entra dopo o ricarica la pagina)
     socket.on("get_users", () => {
-      socket.emit("users_list_update", Array.from(onlineUsers.values()));
+      const usersList = Array.from(onlineUsers.values());
+      console.log(
+        `[SOCKET] Richiesta lista utenti da ${socket.id}, invio ${usersList.length} utenti`
+      );
+      socket.emit("users_list_update", usersList);
     });
 
     // 3. Gestione Sfida: Invio
