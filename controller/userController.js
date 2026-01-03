@@ -1,6 +1,7 @@
 const express = require("express");
 const router = express.Router();
 
+
 /**
  * Crea e configura il router per le rotte relative agli utenti.
  * @param {object} sql - L'istanza del client per il database (es. neon).
