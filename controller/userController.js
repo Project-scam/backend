@@ -15,6 +15,7 @@ const userController = (sql) => {
       const utenti =
         await sql`SELECT id, username, punti, stato FROM utenti ORDER BY punti DESC`;
       res.json(utenti);
+      console.log(res.utenti);
     } catch (err) {
       console.error("Errore query utenti:", err);
       res.status(500).json({ error: "Errore nel leggere la tabella utenti" });
