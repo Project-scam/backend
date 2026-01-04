@@ -1,39 +1,39 @@
 //=======================================
 // File: pointsController.js
-// Controller per gestire l'aggiornamento dei punti
+// Controller to handle points updates
 //=======================================
 
 const express = require("express");
 const router = express.Router();
 
 /**
- * Crea e configura il router per le rotte relative ai punti.
- * @param {object} sql - L'istanza del client per il database.
- * @returns {object} Il router di Express configurato.
+ * Creates and configures the router for points-related routes.
+ * @param {object} sql - The database client instance.
+ * @returns {object} The configured Express router.
  */
 const pointsController = (sql) => {
   // POST /points/update
-  // Aggiorna i punti di un utente
+  // Updates a user's points
   router.post("/update", async (req, res) => {
     try {
       const { username, pointsToAdd } = req.body;
 
       if (!username || pointsToAdd === undefined) {
         return res.status(400).json({
-          error: "Username e pointsToAdd sono obbligatori",
+          error: "Username and pointsToAdd are required",
         });
       }
 
-      // ✅ SICUREZZA: Verifica che l'utente autenticato possa aggiornare solo i propri punti
-      // (oppure è un admin - da implementare se necessario)
+      // ✅ SECURITY: Verify that the authenticated user can only update their own points
+      // (or is an admin - to be implemented if necessary)
       const authenticatedUsername = req.user?.username;
       if (authenticatedUsername !== username) {
         return res.status(403).json({
-          error: "Non autorizzato: puoi aggiornare solo i tuoi punti",
+          error: "Unauthorized: you can only update your own points",
         });
       }
 
-      // Verifica che l'utente esista
+      // Verify that the user exists
       const user = await sql`
                 SELECT id, username, punti 
                 FROM utenti 
@@ -41,14 +41,14 @@ const pointsController = (sql) => {
             `;
 
       if (user.length === 0) {
-        return res.status(404).json({ error: "Utente non trovato" });
+        return res.status(404).json({ error: "User not found" });
       }
 
-      // Calcola i nuovi punti (assicurandosi che non vadano sotto zero)
+      // Calculate new points (ensuring they don't go below zero)
       const currentPoints = user[0].punti || 0;
       const newPoints = Math.max(0, currentPoints + pointsToAdd);
 
-      // Aggiorna i punti nel database
+      // Update points in the database
       await sql`
                 UPDATE utenti 
                 SET punti = ${newPoints} 
@@ -67,13 +67,13 @@ const pointsController = (sql) => {
         newPoints: newPoints,
       });
     } catch (err) {
-      console.error("[POINTS] Errore aggiornamento punti:", err);
-      return res.status(500).json({ error: "Errore interno del server" });
+      console.error("[POINTS] Error updating points:", err);
+      return res.status(500).json({ error: "Internal server error" });
     }
   });
 
   // GET /points/:username
-  // Ottiene i punti attuali di un utente
+  // Gets the current points of a user
   router.get("/:username", async (req, res) => {
     try {
       const { username } = req.params;
@@ -85,7 +85,7 @@ const pointsController = (sql) => {
             `;
 
       if (user.length === 0) {
-        return res.status(404).json({ error: "Utente non trovato" });
+        return res.status(404).json({ error: "User not found" });
       }
 
       res.json({
@@ -93,8 +93,8 @@ const pointsController = (sql) => {
         punti: user[0].punti || 0,
       });
     } catch (err) {
-      console.error("[POINTS] Errore lettura punti:", err);
-      return res.status(500).json({ error: "Errore interno del server" });
+      console.error("[POINTS] Error reading points:", err);
+      return res.status(500).json({ error: "Internal server error" });
     }
   });
 

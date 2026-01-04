@@ -1,29 +1,29 @@
 //==============================================================
 // File: socketController.js
-// Gestione eventi WebSocket per lobby e sfide
+// WebSocket event handling for lobby and challenges
 //==============================================================
 
 /**
- * Gestisce tutta la logica WebSocket per la lista  e il gioco.
- * Mantiene in memoria la lista degli utenti connessi.
+ * Handles all WebSocket logic for the list and the game.
+ * Maintains in memory the list of connected users.
  *
- * @param {object} io - L'istanza del server Socket.io
+ * @param {object} io - The Socket.io server instance
  */
 const socketController = (io) => {
-  // Mappa per tracciare gli utenti online: socket.id -> { username, ... }
+  // Map to track online users: socket.id -> { username, ... }
   const onlineUsers = new Map();
 
   io.on("connection", (socket) => {
-    console.log(`[SOCKET] Nuova connessione: ${socket.id}`);
+    console.log(`[SOCKET] New connection: ${socket.id}`);
 
-    // 1. Registrazione utente nella lista
-    // Quando il frontend si connette e invia "register_user"
+    // 1. User registration in the list
+    // When the frontend connects and sends "register_user"
     socket.on("register_user", (userData) => {
-      // Gestisce sia se userData è una stringa (da App.jsx attuale) sia se è un oggetto
+      // Handles both if userData is a string (from current App.jsx) and if it's an object
       const username =
         typeof userData === "string" ? userData : userData?.username;
 
-      // Salviamo anche il socketId per poterlo contattare privatamente
+      // Also save the socketId to contact them privately
       const user = {
         username: username,
         socketId: socket.id,
@@ -33,32 +33,32 @@ const socketController = (io) => {
       onlineUsers.set(socket.id, user);
       const usersList = Array.from(onlineUsers.values());
       console.log(
-        `[SOCKET] Utente registrato: ${username} (${socket.id}), totale utenti online: ${usersList.length}`
+        `[SOCKET] User registered: ${username} (${socket.id}), total online users: ${usersList.length}`
       );
       console.log(
-        "[SOCKET] Lista utenti:",
+        "[SOCKET] User list:",
         usersList.map((u) => ({ username: u.username, socketId: u.socketId }))
       );
 
-      // Notifica a TUTTI i client la nuova lista utenti aggiornata
+      // Notify ALL clients of the updated user list
       io.emit("users_list_update", usersList);
     });
 
-    // 2. Richiesta lista utenti (per chi entra dopo o ricarica la pagina)
+    // 2. User list request (for those who enter later or reload the page)
     socket.on("get_users", () => {
       const usersList = Array.from(onlineUsers.values());
       console.log(
-        `[SOCKET] Richiesta lista utenti da ${socket.id}, invio ${usersList.length} utenti`
+        `[SOCKET] User list request from ${socket.id}, sending ${usersList.length} users`
       );
       socket.emit("users_list_update", usersList);
     });
 
-    // 3. Gestione Sfida: Invio
+    // 3. Challenge Handling: Send
     socket.on("send_challenge", ({ targetSocketId }) => {
       const challenger = onlineUsers.get(socket.id);
 
       if (challenger && onlineUsers.has(targetSocketId)) {
-        // Invia l'evento SOLO all'utente sfidato
+        // Send the event ONLY to the challenged user
         io.to(targetSocketId).emit("challenge_received", {
           username: challenger.username,
           socketId: socket.id,
@@ -66,19 +66,19 @@ const socketController = (io) => {
       }
     });
 
-    // 4. Gestione Sfida: Accettazione
+    // 4. Challenge Handling: Acceptance
     socket.on("accept_challenge", ({ challengerId }) => {
       const accepter = onlineUsers.get(socket.id);
       const challenger = onlineUsers.get(challengerId);
 
       if (accepter && challenger) {
-        // Notifica lo sfidante che la sfida è stata accettata
+        // Notify the challenger that the challenge has been accepted
         io.to(challengerId).emit("challenge_accepted", {
           opponent: accepter.username,
           opponentSocketId: socket.id,
         });
 
-        // Notifica anche chi ha accettato (l'accepter)
+        // Also notify the accepter
         io.to(socket.id).emit("challenge_accepted", {
           opponent: challenger.username,
           opponentSocketId: challengerId,
@@ -86,48 +86,48 @@ const socketController = (io) => {
       }
     });
 
-    // 5. Disconnessione
+    // 5. Disconnection
     socket.on("disconnect", () => {
       if (onlineUsers.has(socket.id)) {
         onlineUsers.delete(socket.id);
 
-        // Aggiorna la lista per tutti gli altri
+        // Update the list for everyone else
         io.emit("users_list_update", Array.from(onlineUsers.values()));
       }
     });
 
-    // 6. Gestione Codice Segreto in 1vs1: Maker invia codice al Breaker
+    // 6. Secret Code Handling in 1vs1: Maker sends code to Breaker
     socket.on("send_secret_code", ({ targetSocketId, secretCode }) => {
-      // ✅ Validazione parametri
+      // ✅ Parameter validation
       if (!targetSocketId || !secretCode || !Array.isArray(secretCode)) {
-        console.error("[SOCKET] Parametri invalidi per send_secret_code");
+        console.error("[SOCKET] Invalid parameters for send_secret_code");
         return;
       }
 
       const sender = onlineUsers.get(socket.id);
       if (sender && onlineUsers.has(targetSocketId)) {
-        // Invia il codice segreto SOLO al breaker
+        // Send the secret code ONLY to the breaker
         io.to(targetSocketId).emit("secret_code_received", {
           secretCode: secretCode,
           maker: sender.username,
         });
         console.log(
-          `[SOCKET] Codice segreto inviato da ${sender.username} a ${targetSocketId}`
+          `[SOCKET] Secret code sent from ${sender.username} to ${targetSocketId}`
         );
       }
     });
 
-    // 7. Gestione Tentativo in 1vs1: Breaker invia tentativo al Maker per feedback
+    // 7. Guess Handling in 1vs1: Breaker sends guess to Maker for feedback
     socket.on("send_guess", ({ targetSocketId, guess, feedback }) => {
-      // ✅ Validazione parametri
+      // ✅ Parameter validation
       if (!targetSocketId || !guess || !Array.isArray(guess) || !feedback) {
-        console.error("[SOCKET] Parametri invalidi per send_guess");
+        console.error("[SOCKET] Invalid parameters for send_guess");
         return;
       }
 
       const sender = onlineUsers.get(socket.id);
       if (sender && onlineUsers.has(targetSocketId)) {
-        // Invia il tentativo e feedback al maker (per visualizzazione)
+        // Send the guess and feedback to the maker (for display)
         io.to(targetSocketId).emit("guess_received", {
           guess: guess,
           feedback: feedback,
@@ -136,24 +136,24 @@ const socketController = (io) => {
       }
     });
 
-    // 8. Gestione Fine Partita: Notifica entrambi i giocatori
+    // 8. Game End Handling: Notify both players
     socket.on(
       "game_ended",
       ({ targetSocketId, gameWon, guessesCount, winner }) => {
-        // ✅ Validazione parametri
+        // ✅ Parameter validation
         if (
           !targetSocketId ||
           gameWon === undefined ||
           guessesCount === undefined
         ) {
-          console.error("[SOCKET] Parametri invalidi per game_ended");
+          console.error("[SOCKET] Invalid parameters for game_ended");
           return;
         }
 
         const sender = onlineUsers.get(socket.id);
         if (sender && onlineUsers.has(targetSocketId)) {
           const opponent = onlineUsers.get(targetSocketId);
-          // Notifica entrambi i giocatori della fine partita
+          // Notify both players of the game end
           io.to(targetSocketId).emit("game_ended_notification", {
             gameWon: gameWon,
             guessesCount: guessesCount,
