@@ -1,6 +1,6 @@
 //=======================================
 // File: rankingController.js
-// script che richiama la classifica
+// Script that retrieves the ranking
 // @author: "catalin.groppo@allievi.itsdigitalacademy.com"
 //           mattia.zara@allievi.itsdigitalacademy.com"
 //           sandu.batrincea@allievi.itsdigitalacademy.com"
@@ -12,17 +12,17 @@ const express = require("express");
 const router = express.Router();
 
 /**
- * Crea e configura il router per la rotta del ranking (classifica).
- * @param {object} sql - L'istanza del client per il database.
- * @returns {object} Il router di Express configurato.
+ * Creates and configures the router for the ranking route.
+ * @param {object} sql - The database client instance.
+ * @returns {object} The configured Express router.
  */
 const rankingController = (sql) => {
     // GET /ranking
     router.get("/", async (req, res) => {
-        console.log("[RANKING] Richiesta classifica ricevuta");
+        console.log("[RANKING] Ranking request received");
 
         try {
-            // Seleziona username e punti, ordinati per punti decrescenti
+            // Select username and points, ordered by descending points
             const classifica = await sql`
                 SELECT username, punti 
                 FROM utenti 
@@ -31,8 +31,8 @@ const rankingController = (sql) => {
             `;
             res.json(classifica);
         } catch (err) {
-            console.error("[RANKING] Errore query:", err);
-            return res.status(500).json({ error: "Errore interno del server" });
+            console.error("[RANKING] Query error:", err);
+            return res.status(500).json({ error: "Internal server error" });
         }
     });
 

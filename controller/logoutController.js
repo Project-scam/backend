@@ -1,6 +1,6 @@
 //=============================
 // File: logoutController.js
-// script che esegue il logout
+// Script that handles logout
 //==========================
 
 const express = require("express");
@@ -8,49 +8,49 @@ const router = express.Router();
 const jwt = require("jsonwebtoken");
 
 const logoutController = (sql) => {
-    // Rotta POST / (che sarà montata su /logout)
+    // POST route / (which will be mounted on /logout)
     router.post("/", async (req, res) => {
-        console.log("[LOGOUT] Richiesta ricevuta");
-        // DEBUG: Stampa l'origine e i cookie grezzi ricevuti
+        console.log("[LOGOUT] Request received");
+        // DEBUG: Print the origin and raw cookies received
         console.log("[LOGOUT] Origin:", req.headers.origin);
         console.log("[LOGOUT] Raw Cookie Header:", req.headers.cookie);
 
-        const token = req.cookies.token; // Recupera il token dal cookie
+        const token = req.cookies.token; // Retrieve token from cookie
         
         if (!token) {
-            console.log("[LOGOUT] Nessun token trovato nei cookie");
-            return res.status(200).json({ message: "Logout effettuato (nessun token trovato)" });
+            console.log("[LOGOUT] No token found in cookies");
+            return res.status(200).json({ message: "Logout successful (no token found)" });
         }
 
         try {
-            // Verifica il token (sincrona per gestire meglio il flusso async/await)
+            // Verify token (synchronous to better handle async/await flow)
             const user = jwt.verify(token, process.env.JWT_SECRET || "segreto_super_sicuro_da_cambiare");
 
-            console.log(`[LOGOUT] Token valido per utente ID: ${user.id}`);
+            console.log(`[LOGOUT] Valid token for user ID: ${user.id}`);
 
-            // Aggiorna lo stato nel DB a 'U' (Unlogged)
+            // Update status in DB to 'U' (Unlogged)
             await sql`UPDATE utenti SET stato = 'U' WHERE id = ${user.id}`;
-            console.log("[LOGOUT] Stato utente aggiornato nel DB");
+            console.log("[LOGOUT] User status updated in DB");
 
-            // Cancella il cookie HttpOnly
+            // Clear HttpOnly cookie
             res.clearCookie("token", {
                 httpOnly: true,
                 secure: process.env.NODE_ENV === "production",
                 sameSite: process.env.NODE_ENV === "production" ? "none" : "lax"
             });
 
-            console.log("Logout effettuato con successo"); // Ora questo apparirà nella console!
-            return res.json({ message: "Logout effettuato con successo" });
+            console.log("Logout successful"); // This will now appear in the console!
+            return res.json({ message: "Logout successful" });
 
         } catch (error) {
-            console.error("[LOGOUT] Errore o token scaduto:", error.message);
-            // In caso di errore (es. token scaduto), puliamo comunque il cookie
+            console.error("[LOGOUT] Error or token expired:", error.message);
+            // In case of error (e.g. expired token), clear the cookie anyway
             res.clearCookie("token", {
                 httpOnly: true,
                 secure: process.env.NODE_ENV === "production",
                 sameSite: process.env.NODE_ENV === "production" ? "none" : "lax"
             });
-            return res.status(200).json({ message: "Logout effettuato (token non valido)" });
+            return res.status(200).json({ message: "Logout successful (invalid token)" });
         }
     });
 

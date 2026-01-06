@@ -3,49 +3,49 @@ const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const router = express.Router();
 
-const SALT_ROUNDS = 10; // Numero di cicli per l'hashing. 10 è un buon punto di partenza.
+const SALT_ROUNDS = 10; // Number of cycles for hashing. 10 is a good starting point.
 
 /**
- * Crea e configura il router per la rotta di registrazione.
- * @param {object} sql - L'istanza del client per il database (es. neon).
- * @returns {object} Il router di Express configurato.
+ * Creates and configures the router for the registration route.
+ * @param {object} sql - The database client instance (e.g. neon).
+ * @returns {object} The configured Express router.
  */
 const registrationController = (sql) => {
     router.post("/", async (req, res) => {
-        const { username, password } = req.body || {};
+        const { username, password } = req.body || {}
 
         if (!username || !password) {
             return res
                 .status(400)
-                .json({ error: "Username e password sono obbligatorie" });
+                .json({ error: "Username and password are required" })
         }
 
         try {
-            // 1. Controlla se l'utente esiste già
+            // 1. Check if user already exists
             const existingUser =
-                await sql`SELECT id FROM utenti WHERE username = ${username}`;
+                await sql`SELECT id FROM utenti WHERE username = ${username}`
 
             if (existingUser.length > 0) {
-                return res.status(409).json({ error: "Username già in uso" });
+                return res.status(409).json({ error: "Username already in use" })
             }
 
-            // 2. Esegui l'hashing della password
-            const hashedPassword = await bcrypt.hash(password, SALT_ROUNDS);
+            // 2. Hash the password
+            const hashedPassword = await bcrypt.hash(password, SALT_ROUNDS)
 
-            // 3. Inserisci il nuovo utente nel database
+            // 3. Insert the new user into the database
             const result =
-                await sql`INSERT INTO utenti (username, pwd, stato, ruolo) VALUES (${username}, ${hashedPassword}, 'U', 'user') RETURNING id, username, stato, ruolo`; // status default U, ci penserà a gestirlo il websocket
+                await sql`INSERT INTO utenti (username, pwd, stato, ruolo) VALUES (${username}, ${hashedPassword}, 'U', 'user') RETURNING id, username, stato, ruolo`; // default status U, websocket will handle it
 
-            const utente = result[0];
+            const utente = result[0]
 
-            // Genera il Token JWT (lo stesso meccanismo del Login)
+            // Generate JWT Token (same mechanism as Login)
             const token = jwt.sign(
                 { id: utente.id, username: utente.username, ruolo: utente.ruolo },
                 process.env.JWT_SECRET || "segreto_super_sicuro_da_cambiare",
                 { expiresIn: "1h" }
             );
 
-            // Imposta il cookie HttpOnly
+            // Set HttpOnly cookie
             res.cookie("token", token, {
                 httpOnly: true,
                 secure: process.env.NODE_ENV === "production",
@@ -53,18 +53,18 @@ const registrationController = (sql) => {
                 sameSite: process.env.NODE_ENV === "production" ? "none" : "lax"
             });
 
-            // 4. Restituisci una risposta di successo
+            // 4. Return a success response
             return res.status(201).json({
-                message: "Utente registrato con successo",
+                message: "User registered successfully",
                 user: utente,
             });
         } catch (err) {
-            console.error("Errore durante la registrazione:", err);
-            return res.status(500).json({ error: "Errore interno del server" });
+            console.error("Error during registration:", err);
+            return res.status(500).json({ error: "Internal server error" })
         }
     });
 
-    return router;
+    return router
 };
 
-module.exports = registrationController;
+module.exports = registrationController

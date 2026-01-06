@@ -1,6 +1,6 @@
 require("dotenv").config();
 const express = require("express");
-const http = require("http"); // Modulo nativo di Node.js per creare server http di basso livello necessario per Socket.io
+const http = require("http"); // Native Node.js module to create low-level http server necessary for Socket.io
 const { Server } = require("socket.io");
 const { neon } = require("@neondatabase/serverless");
 const cors = require("cors");
@@ -16,64 +16,64 @@ const cookieParser = require("cookie-parser");
 const { FRONTEND_URL } = require("./config");
 
 const app = express();
-app.set("trust proxy", 1); // FONDAMENTALE per i cookie Secure/SameSite:None su Render/Vercel
+app.set("trust proxy", 1); // ESSENTIAL for Secure/SameSite:None cookies on Render/Vercel
 
-// 1. Creiamo esplicitamente il server HTTP wrappando l'app Express
+// 1. Explicitly create the HTTP server wrapping the Express app
 const server = http.createServer(app);
 
-// 2. Configuriamo Socket.io attanccandolo al server HTTP
+// 2. Configure Socket.io attaching it to the HTTP server
 const io = new Server(server, {
   cors: {
-    origin: FRONTEND_URL, // Usa l'URL corretto (localhost o produzione)
+    origin: FRONTEND_URL, // Use the correct URL (localhost or production)
     methods: ["GET", "POST"],
-    credentials: true, // Permette, se necessario, il passaggio di cookie anche nel handshake socket
+    credentials: true, // Allows, if necessary, cookie passing also in socket handshake
   },
 });
-// Controllo di sicurezza all'avvio
+// Security check on startup
 if (!process.env.DATABASE_URL) {
   console.error(
-    "❌ ERRORE FATALE: La variabile DATABASE_URL non è definita nel file .env!"
+    "❌ FATAL ERROR: DATABASE_URL variable is not defined in the .env file!"
   );
   process.exit(1);
 }
-const sql = neon(process.env.DATABASE_URL); // Usa la tua DATABASE_URL
+const sql = neon(process.env.DATABASE_URL); // Use your DATABASE_URL
 
-// Passiamo l'istanza "io" al controller dei socket
+// Pass the "io" instance to the socket controller
 socketController(io);
 
-//Abilita CORS per tutte le rotte
+//Enable CORS for all routes
 app.use(
   cors({
-    origin: FRONTEND_URL, // Usa l'URL dinamico in base all'ambiente
-    credentials: true, // FONDAMENTALE: Permette al browser di inviare i cookie al backend
+    origin: FRONTEND_URL, // Use dynamic URL based on environment
+    credentials: true, // ESSENTIAL: Allows the browser to send cookies to the backend
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
   })
 );
 app.use(express.json());
-app.use(cookieParser()); // Abilito la lettura di req.cookies
+app.use(cookieParser()); // Enable reading of req.cookies
 
-// Usa il router per la rotta di login
+// Use the router for the login route
 const loginRouter = loginController(sql);
 app.use("/login", loginRouter);
 
-// Usa il router per la rotta di logour
+// Use the router for the logout route
 const logoutRouter = logoutController(sql);
 app.use("/logout", logoutRouter);
 
-// Usa il router per la rotta di registrazione
+// Use the router for the registration route
 const registrationRouter = registrationController(sql);
 app.use("/register", registrationRouter);
 
-// Usa il router per le rotte degli utenti
+// Use the router for user routes
 const utentiRouter = userController(sql);
-app.use("/utenti", authMiddleware, utentiRouter); // La rotta ora è protetta dal middleware
+app.use("/utenti", authMiddleware, utentiRouter); // The route is now protected by middleware
 
-// Usa il router per la classifica
+// Use the router for the ranking
 const rankingRouter = rankingController(sql);
 app.use("/ranking", authMiddleware, rankingRouter);
 
-// Usa il router per i punti
+// Use the router for points
 const pointsRouter = pointsController(sql);
 app.use("/points", authMiddleware, pointsRouter);
 
