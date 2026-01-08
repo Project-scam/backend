@@ -34,7 +34,7 @@ const registrationController = (sql) => {
 
             // 3. Insert the new user into the database
             const result =
-                await sql`INSERT INTO utenti (username, pwd, stato, ruolo) VALUES (${username}, ${hashedPassword}, 'U', 'user') RETURNING id, username, stato, ruolo`; // default status U, websocket will handle it
+                await sql`INSERT INTO utenti (username, pwd, stato, ruolo, punti) VALUES (${username}, ${hashedPassword}, 'U', 'user', 0) RETURNING id, username, stato, ruolo, punti`; // default status U, websocket will handle it
 
             const utente = result[0]
 
