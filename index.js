@@ -71,7 +71,7 @@ app.use("/utenti", authMiddleware, utentiRouter); // The route is now protected 
 
 // Use the router for the ranking
 const rankingRouter = rankingController(sql);
-app.use("/ranking", authMiddleware, rankingRouter);
+app.use("/ranking", rankingRouter); // tolto authMiddleware perchè la classifica è pubblica e su determinati dispositivi non ne permette la visualizzazione
 
 // Use the router for points
 const pointsRouter = pointsController(sql);
