@@ -6,6 +6,17 @@ const router = express.Router();
 const SALT_ROUNDS = 10; // Number of cycles for hashing. 10 is a good starting point.
 
 /**
+ * Validates if a string is a valid email format.
+ * @param {string} email - The email string to validate.
+ * @returns {boolean} True if valid email format, false otherwise.
+ */
+const isValidEmail = (email) => {
+    // RFC 5322 compliant email regex
+    const emailRegex = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/;
+    return emailRegex.test(email);
+};
+
+/**
  * Creates and configures the router for the registration route.
  * @param {object} sql - The database client instance (e.g. neon).
  * @returns {object} The configured Express router.
@@ -18,6 +29,13 @@ const registrationController = (sql) => {
             return res
                 .status(400)
                 .json({ error: "Username and password are required" })
+        }
+
+        // Validate that username is a valid email
+        if (!isValidEmail(username)) {
+            return res
+                .status(400)
+                .json({ error: "Username must be a valid email address" })
         }
 
         try {
