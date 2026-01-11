@@ -23,7 +23,7 @@ const isValidEmail = (email) => {
 const loginController = (sql) => {
     // Route to verify session on page load
     // GET /login/verify
-    router.get("/verify", (req, res) => {
+    router.get("/verify", async (req, res) => {
         const token = req.cookies.token;
 
         if (!token) {
@@ -32,8 +32,29 @@ const loginController = (sql) => {
 
         try {
             const decoded = jwt.verify(token, process.env.JWT_SECRET || "segreto_super_sicuro_da_cambiare");
+
+            // Verify that the user still exists in the database
+            const result = await sql`SELECT id, username, ruolo, stato FROM utenti WHERE id = ${decoded.id}`;
+
+            if (result.length === 0) {
+                // Utente non più presente nel database, pulisci il cookie
+                console.log("[VERIFY] Utente non più presente nel database, pulisci il cookie");
+                res.clearCookie("token", {
+                    httpOnly: true,
+                    secure: process.env.NODE_ENV === "production",
+                    sameSite: process.env.NODE_ENV === "production" ? "none" : "lax"
+                });
+                return res.json({ user: null });
+            }
+
             res.json({ user: decoded });
         } catch (err) {
+            // Invalid or expired token - clear the cookie
+            res.clearCookie("token", {
+                httpOnly: true,
+                secure: process.env.NODE_ENV === "production",
+                sameSite: process.env.NODE_ENV === "production" ? "none" : "lax"
+            });
             res.json({ user: null });
         }
     });
