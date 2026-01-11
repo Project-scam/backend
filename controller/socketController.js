@@ -20,6 +20,10 @@ const socketController = (io) => {
     // When the frontend connects and sends "register_user"
     socket.on("register_user", (userData) => {
       // Handles both if userData is a string (from current App.jsx) and if it's an object
+      if(userData.user === "Guest") {
+        console.log()
+        return null
+      } 
       const username =
         typeof userData === "string" ? userData : userData?.username;
 
