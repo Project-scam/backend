@@ -39,7 +39,7 @@ if (!process.env.DATABASE_URL) {
 const sql = neon(process.env.DATABASE_URL); // Use your DATABASE_URL
 
 // Pass the "io" instance to the socket controller
-socketController(io);
+socketController(io, sql);
 
 //Enable CORS for all routes
 app.use(

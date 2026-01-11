@@ -8,26 +8,47 @@
  * Maintains in memory the list of connected users.
  *
  * @param {object} io - The Socket.io server instance
+ * @param {function} sql - The database client instance (neon)
  */
-const socketController = (io) => {
+const socketController = (io, sql) => {
   // Map to track online users: socket.id -> { username, ... }
   const onlineUsers = new Map();
+
+  // On server startup, reset all users to 'U' (Unlogged) state
+  // This handles the case where the server restarts but DB still has users as 'L'
+  (async () => {
+    try {
+      await sql`UPDATE utenti SET stato = 'U' WHERE stato = 'L'`;
+      console.log("[SOCKET] Reset all users to 'U' state on server startup");
+    } catch (err) {
+      console.error("[SOCKET] Error resetting user states:", err);
+    }
+  })();
 
   io.on("connection", (socket) => {
     console.log(`[SOCKET] New connection: ${socket.id}`);
 
     // 1. User registration in the list
-    // When the frontend connects and sends "register_user"
-    socket.on("register_user", (userData) => {
-      // Handles both if userData is a string (from current App.jsx) and if it's an object
-      if(userData.user === "Guest") {
-        console.log()
-        return null
-      } 
+    socket.on("register_user", async (userData) => {
+      // Handles both if userData is a string and if it's an object
       const username =
         typeof userData === "string" ? userData : userData?.username;
 
-      // Also save the socketId to contact them privately
+      // Skip registration for Guest users
+      if (!username || username === "Guest") {
+        console.log("[SOCKET] Guest or invalid user skipped");
+        return;
+      }
+
+      // Remove any existing entry for this username (handles reconnections)
+      for (const [socketId, user] of onlineUsers.entries()) {
+        if (user.username === username) {
+          onlineUsers.delete(socketId);
+          console.log(`[SOCKET] Removed old socket for user: ${username}`);
+        }
+      }
+
+      // Save the user with their socketId
       const user = {
         username: username,
         socketId: socket.id,
@@ -35,20 +56,24 @@ const socketController = (io) => {
       };
 
       onlineUsers.set(socket.id, user);
+
+      // Update DB status to 'L' (Logged)
+      try {
+        await sql`UPDATE utenti SET stato = 'L' WHERE username = ${username}`;
+      } catch (err) {
+        console.error("[SOCKET] Error updating user state in DB:", err);
+      }
+
       const usersList = Array.from(onlineUsers.values());
       console.log(
         `[SOCKET] User registered: ${username} (${socket.id}), total online users: ${usersList.length}`
-      );
-      console.log(
-        "[SOCKET] User list:",
-        usersList.map((u) => ({ username: u.username, socketId: u.socketId }))
       );
 
       // Notify ALL clients of the updated user list
       io.emit("users_list_update", usersList);
     });
 
-    // 2. User list request (for those who enter later or reload the page)
+    // 2. User list request
     socket.on("get_users", () => {
       const usersList = Array.from(onlineUsers.values());
       console.log(
@@ -62,7 +87,6 @@ const socketController = (io) => {
       const challenger = onlineUsers.get(socket.id);
 
       if (challenger && onlineUsers.has(targetSocketId)) {
-        // Send the event ONLY to the challenged user
         io.to(targetSocketId).emit("challenge_received", {
           username: challenger.username,
           socketId: socket.id,
@@ -76,13 +100,11 @@ const socketController = (io) => {
       const challenger = onlineUsers.get(challengerId);
 
       if (accepter && challenger) {
-        // Notify the challenger that the challenge has been accepted
         io.to(challengerId).emit("challenge_accepted", {
           opponent: accepter.username,
           opponentSocketId: socket.id,
         });
 
-        // Also notify the accepter
         io.to(socket.id).emit("challenge_accepted", {
           opponent: challenger.username,
           opponentSocketId: challengerId,
@@ -90,19 +112,27 @@ const socketController = (io) => {
       }
     });
 
-    // 5. Disconnection
-    socket.on("disconnect", () => {
-      if (onlineUsers.has(socket.id)) {
+    // 5. Disconnection - Update both Map and DB
+    socket.on("disconnect", async () => {
+      const user = onlineUsers.get(socket.id);
+      if (user) {
         onlineUsers.delete(socket.id);
+
+        // Update DB status to 'U' (Unlogged)
+        try {
+          await sql`UPDATE utenti SET stato = 'U' WHERE username = ${user.username}`;
+          console.log(`[SOCKET] User ${user.username} disconnected and DB updated`);
+        } catch (err) {
+          console.error("[SOCKET] Error updating user state on disconnect:", err);
+        }
 
         // Update the list for everyone else
         io.emit("users_list_update", Array.from(onlineUsers.values()));
       }
     });
 
-    // 6. Secret Code Handling in 1vs1: Maker sends code to Breaker
+    // 6. Secret Code Handling in 1vs1
     socket.on("send_secret_code", ({ targetSocketId, secretCode }) => {
-      // ✅ Parameter validation
       if (!targetSocketId || !secretCode || !Array.isArray(secretCode)) {
         console.error("[SOCKET] Invalid parameters for send_secret_code");
         return;
@@ -110,7 +140,6 @@ const socketController = (io) => {
 
       const sender = onlineUsers.get(socket.id);
       if (sender && onlineUsers.has(targetSocketId)) {
-        // Send the secret code ONLY to the breaker
         io.to(targetSocketId).emit("secret_code_received", {
           secretCode: secretCode,
           maker: sender.username,
@@ -121,9 +150,8 @@ const socketController = (io) => {
       }
     });
 
-    // 7. Guess Handling in 1vs1: Breaker sends guess to Maker for feedback
+    // 7. Guess Handling in 1vs1
     socket.on("send_guess", ({ targetSocketId, guess, feedback }) => {
-      // ✅ Parameter validation
       if (!targetSocketId || !guess || !Array.isArray(guess) || !feedback) {
         console.error("[SOCKET] Invalid parameters for send_guess");
         return;
@@ -131,7 +159,6 @@ const socketController = (io) => {
 
       const sender = onlineUsers.get(socket.id);
       if (sender && onlineUsers.has(targetSocketId)) {
-        // Send the guess and feedback to the maker (for display)
         io.to(targetSocketId).emit("guess_received", {
           guess: guess,
           feedback: feedback,
@@ -140,11 +167,10 @@ const socketController = (io) => {
       }
     });
 
-    // 8. Game End Handling: Notify both players
+    // 8. Game End Handling
     socket.on(
       "game_ended",
       ({ targetSocketId, gameWon, guessesCount, winner }) => {
-        // ✅ Parameter validation
         if (
           !targetSocketId ||
           gameWon === undefined ||
@@ -157,7 +183,6 @@ const socketController = (io) => {
         const sender = onlineUsers.get(socket.id);
         if (sender && onlineUsers.has(targetSocketId)) {
           const opponent = onlineUsers.get(targetSocketId);
-          // Notify both players of the game end
           io.to(targetSocketId).emit("game_ended_notification", {
             gameWon: gameWon,
             guessesCount: guessesCount,
