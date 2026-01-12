@@ -33,7 +33,7 @@ const isValidEmail = (email) => {
  * @returns {object} Configurazione del router Express.
  */
 const passwordResetController = (sql) => {
-    
+
     // POST /password-reset/request - Richiesta reset password (invio email)
     router.post("/request", async (req, res) => {
         console.log("[PASSWORD-RESET] Request received for email:", req.body.email);
@@ -46,12 +46,12 @@ const passwordResetController = (sql) => {
         try {
             // 1. Verifica che l'utente esista
             const users = await sql`SELECT id, username FROM utenti WHERE username = ${email}`;
-            
+
             if (users.length === 0) {
                 console.log("[PASSWORD-RESET] Email not found (returning generic message):", email);
                 // Per sicurezza, restituisci sempre lo stesso messaggio
-                return res.status(200).json({ 
-                    message: "If the email exists, a reset link has been sent" 
+                return res.status(200).json({
+                    message: "If the email exists, a reset link has been sent"
                 });
             }
 
@@ -59,10 +59,10 @@ const passwordResetController = (sql) => {
 
             // 2. Genera un token sicuro (32 byte = 64 caratteri hex)
             const resetToken = crypto.randomBytes(32).toString("hex");
-            
+
             // 3. Hash del token prima di salvarlo nel DB (mai salvare token in chiaro)
             const hashedToken = crypto.createHash("sha256").update(resetToken).digest("hex");
-            
+
             // 4. Imposta scadenza (1 ora)
             const expiry = new Date(Date.now() + 3600000); // 1 ora
 
@@ -106,8 +106,8 @@ const passwordResetController = (sql) => {
             });
 
             console.log("[PASSWORD-RESET] Reset email sent successfully to:", email);
-            return res.status(200).json({ 
-                message: "If the email exists, a reset link has been sent" 
+            return res.status(200).json({
+                message: "If the email exists, a reset link has been sent"
             });
 
         } catch (err) {
@@ -144,8 +144,8 @@ const passwordResetController = (sql) => {
 
             if (users.length === 0) {
                 console.log("[PASSWORD-RESET] Invalid or expired token for:", email);
-                return res.status(400).json({ 
-                    error: "Invalid or expired reset token" 
+                return res.status(400).json({
+                    error: "Invalid or expired reset token"
                 });
             }
 
@@ -164,8 +164,8 @@ const passwordResetController = (sql) => {
             `;
 
             console.log("[PASSWORD-RESET] Password reset successfully for user ID:", user.id);
-            return res.status(200).json({ 
-                message: "Password reset successfully" 
+            return res.status(200).json({
+                message: "Password reset successfully"
             });
 
         } catch (err) {
