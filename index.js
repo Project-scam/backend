@@ -10,6 +10,7 @@ const registrationController = require("./controller/registrationController");
 const userController = require("./controller/userController");
 const rankingController = require("./controller/rankingController");
 const pointsController = require("./controller/pointsController");
+const passwordResetController = require("./controller/passwordResetController");
 const socketController = require("./controller/socketController");
 const authMiddleware = require("./middleware/authMiddleware");
 const cookieParser = require("cookie-parser");
@@ -76,6 +77,10 @@ app.use("/ranking", rankingRouter); // tolto authMiddleware perchè la classific
 // Use the router for points
 const pointsRouter = pointsController(sql);
 app.use("/points", authMiddleware, pointsRouter);
+
+// Use the router for password reset
+const passwordResetRouter = passwordResetController(sql);
+app.use("/password-reset", passwordResetRouter);
 
 /*if (process.env.NODE_ENV !== "production") {
     const PORT = process.env.PORT || 3000;
