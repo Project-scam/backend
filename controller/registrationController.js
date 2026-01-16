@@ -57,7 +57,7 @@ const registrationController = (sql) => {
       const token = jwt.sign(
         {
           id: utente.id,
-          emiail: utente.email,
+          email: utente.email,
           ruolo: utente.ruolo,
           username: utente.username,
         },
