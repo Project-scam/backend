@@ -31,7 +31,7 @@ const registrationController = (sql) => {
     }
 
     // Validate that username is a valid email
-    if (!isValidEmail(username)) {
+    if (!isValidEmail(email)) {
       return res.status(400).json({ error: "email must be a valid address" });
     }
 
