@@ -26,7 +26,7 @@ const registrationController = (sql) => {
   router.post("/", async (req, res) => {
     const { username, password, email } = req.body || {};
 
-    if (!username || !password) {
+    if (!email || !password) {
       return res.status(400).json({ error: "Email or password are required" });
     }
 
@@ -55,7 +55,12 @@ const registrationController = (sql) => {
 
       // Generate JWT Token (same mechanism as Login)
       const token = jwt.sign(
-        { id: utente.id, username: utente.username, ruolo: utente.ruolo },
+        {
+          id: utente.id,
+          emiail: utente.email,
+          ruolo: utente.ruolo,
+          username: utente.username,
+        },
         process.env.JWT_SECRET || "segreto_super_sicuro_da_cambiare",
         { expiresIn: "1h" }
       );
