@@ -45,7 +45,7 @@ const passwordResetController = (sql) => {
 
         try {
             // 1. Verifica che l'utente esista
-            const users = await sql`SELECT id, username FROM utenti WHERE username = ${email}`;
+            const users = await sql`SELECT id, username, email FROM utenti WHERE email = ${email}`;
 
             if (users.length === 0) {
                 console.log("[PASSWORD-RESET] Email not found (returning generic message):", email);
@@ -137,7 +137,7 @@ const passwordResetController = (sql) => {
             const users = await sql`
                 SELECT id, username, reset_token, reset_token_expiry 
                 FROM utenti 
-                WHERE username = ${email}
+                WHERE email = ${email}
                   AND reset_token = ${hashedToken}
                   AND reset_token_expiry > NOW()
             `;
