@@ -10,9 +10,10 @@ const authMiddleware = require("../middleware/authMiddleware");
  * @returns {boolean} True if valid email format, false otherwise.
  */
 const isValidEmail = (email) => {
-    // RFC 5322 compliant email regex
-    const emailRegex = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/;
-    return emailRegex.test(email);
+  // RFC 5322 compliant email regex
+  const emailRegex =
+    /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/;
+  return emailRegex.test(email);
 };
 
 /**
@@ -21,122 +22,131 @@ const isValidEmail = (email) => {
  * @returns {object} The configured Express router.
  */
 const loginController = (sql) => {
-    // Route to verify session on page load
-    // GET /login/verify
-    router.get("/verify", async (req, res) => {
-        const token = req.cookies.token;
+  // Route to verify session on page load
+  // GET /login/verify
+  router.get("/verify", async (req, res) => {
+    const token = req.cookies.token;
 
-        if (!token) {
-            return res.json({ user: null });
-        }
+    if (!token) {
+      return res.json({ user: null });
+    }
 
-        try {
-            const decoded = jwt.verify(token, process.env.JWT_SECRET || "segreto_super_sicuro_da_cambiare");
+    try {
+      const decoded = jwt.verify(
+        token,
+        process.env.JWT_SECRET || "segreto_super_sicuro_da_cambiare"
+      );
 
-            // Verify that the user still exists in the database
-            const result = await sql`SELECT id, username, ruolo, stato FROM utenti WHERE id = ${decoded.id}`;
+      // Verify that the user still exists in the database
+      const result =
+        await sql`SELECT id, email, ruolo, stato FROM utenti WHERE id = ${decoded.id}`;
 
-            if (result.length === 0) {
-                // Utente non più presente nel database, pulisci il cookie
-                console.log("[VERIFY] Utente non più presente nel database, pulisci il cookie");
-                res.clearCookie("token", {
-                    httpOnly: true,
-                    secure: process.env.NODE_ENV === "production",
-                    sameSite: process.env.NODE_ENV === "production" ? "none" : "lax"
-                });
-                return res.json({ user: null });
-            }
+      if (result.length === 0) {
+        // Utente non più presente nel database, pulisci il cookie
+        console.log(
+          "[VERIFY] Utente non più presente nel database, pulisci il cookie"
+        );
+        res.clearCookie("token", {
+          httpOnly: true,
+          secure: process.env.NODE_ENV === "production",
+          sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+        });
+        return res.json({ user: null });
+      }
 
-            res.json({ user: decoded });
-        } catch (err) {
-            // Invalid or expired token - clear the cookie
-            res.clearCookie("token", {
-                httpOnly: true,
-                secure: process.env.NODE_ENV === "production",
-                sameSite: process.env.NODE_ENV === "production" ? "none" : "lax"
-            });
-            res.json({ user: null });
-        }
-    });
+      res.json({ user: decoded });
+    } catch (err) {
+      // Invalid or expired token - clear the cookie
+      res.clearCookie("token", {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+      });
+      res.json({ user: null });
+    }
+  });
 
-    // User login
-    // The route is POST / since the /login prefix will be used in index.js
-    router.post("/", async (req, res) => {
-        console.log("[LOGIN] Request received");
-        const { username, password } = req.body || {};
+  // User login
+  // The route is POST / since the /login prefix will be used in index.js
+  router.post("/", async (req, res) => {
+    console.log("[LOGIN] Request received");
+    const { email, password } = req.body || {};
 
-        if (!username || !password) {
-            return res
-                .status(400)
-                .json({ error: "Username and password are required" });
-        }
+    if (!email || !password) {
+      return res.status(400).json({ error: "Email and password are required" });
+    }
 
-        // Validate that username is a valid email format
-        if (!isValidEmail(username)) {
-            return res
-                .status(400)
-                .json({ error: "Username must be a valid email address" });
-        }
+    // Validate that email is a valid email format
+    if (!isValidEmail(email)) {
+      return res
+        .status(400)
+        .json({ error: "email must be a valid email address" });
+    }
 
-        try {
-            // Search for user by username
-            const result =
-                await sql`SELECT id, username, pwd, stato, ruolo FROM utenti WHERE username = ${username}`;
+    try {
+      // Search for user by email
+      const result =
+        await sql`SELECT id, email, pwd, stato, ruolo, username FROM utenti WHERE email = ${email}`;
 
-            if (result.length === 0) {
-                console.log("[LOGIN] User not found:", username);
-                // Generic message to avoid revealing whether the user exists or not
-                return res.status(401).json({ error: "Invalid credentials!!" });
-            }
+      if (result.length === 0) {
+        console.log("[LOGIN] User not found:", email);
+        // Generic message to avoid revealing whether the user exists or not
+        return res.status(401).json({ error: "Invalid credentials!!" });
+      }
 
-            const utente = result[0];
+      const utente = result[0];
 
-            // Compare the provided password with the hash saved in the DB
-            const passwordMatch = await bcrypt.compare(password, utente.pwd);
-            if (!passwordMatch) {
-                console.log("[LOGIN] Wrong password for:", username);
-                return res.status(401).json({ error: "Invalid credentials" });
-            }
+      // Compare the provided password with the hash saved in the DB
+      const passwordMatch = await bcrypt.compare(password, utente.pwd);
+      if (!passwordMatch) {
+        console.log("[LOGIN] Wrong password for:", email);
+        return res.status(401).json({ error: "Invalid credentials" });
+      }
 
-            await sql`update utenti set stato = 'L' where id= ${utente.id}`
+      await sql`update utenti set stato = 'L' where id= ${utente.id}`;
 
-            // Generate JWT Token for session management
-            const token = jwt.sign(
-                { id: utente.id, username: utente.username, ruolo: utente.ruolo },
-                process.env.JWT_SECRET || "segreto_super_sicuro_da_cambiare",
-                { expiresIn: "1h" }
-            );
-            console.log("[LOGIN] Token generated successfully");
+      // Generate JWT Token for session management
+      const token = jwt.sign(
+        { id: utente.id, email: utente.email, ruolo: utente.ruolo },
+        process.env.JWT_SECRET || "segreto_super_sicuro_da_cambiare",
+        { expiresIn: "1h" }
+      );
+      console.log("[LOGIN] Token generated successfully");
 
-            const isProduction = process.env.NODE_ENV === "production";
-            console.log(`[LOGIN] Cookie Configuration - Production: ${isProduction}, SameSite: ${isProduction ? "none" : "lax"}`);
+      const isProduction = process.env.NODE_ENV === "production";
+      console.log(
+        `[LOGIN] Cookie Configuration - Production: ${isProduction}, SameSite: ${
+          isProduction ? "none" : "lax"
+        }`
+      );
 
-            // Set HttpOnly cookie
-            res.cookie("token", token, {
-                httpOnly: true, // Essential: prevents access via JS
-                secure: isProduction, // Use HTTPS in production
-                maxAge: 3600000, // 1 hour in milliseconds
-                sameSite: isProduction ? "none" : "lax" // "none" for cross-site (Vercel->Render), "lax" for localhost
-            });
-            console.log("[LOGIN] HttpOnly cookie set in response");
+      // Set HttpOnly cookie
+      res.cookie("token", token, {
+        httpOnly: true, // Essential: prevents access via JS
+        secure: isProduction, // Use HTTPS in production
+        maxAge: 3600000, // 1 hour in milliseconds
+        sameSite: isProduction ? "none" : "lax", // "none" for cross-site (Vercel->Render), "lax" for localhost
+      });
+      console.log("[LOGIN] HttpOnly cookie set in response");
 
-            // Login success: returns a message and user data (without password)
-            return res.json({
-                message: "Login successful",
-                user: {
-                    id: utente.id,
-                    username: utente.username,
-                    stato: 'L',
-                    ruolo: utente.ruolo
-                },
-            });
-        } catch (err) {
-            console.error("Error during login:", err);
-            return res.status(500).json({ error: "Internal server error" });
-        }
-    });
+      // Login success: returns a message and user data (without password)
+      return res.json({
+        message: "Login successful",
+        user: {
+          id: utente.id,
+          email: utente.email,
+          stato: "L",
+          ruolo: utente.ruolo,
+          username: utente.username,
+        },
+      });
+    } catch (err) {
+      console.error("Error during login:", err);
+      return res.status(500).json({ error: "Internal server error" });
+    }
+  });
 
-    return router;
+  return router;
 };
 
 module.exports = loginController;
