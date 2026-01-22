@@ -39,7 +39,7 @@ const loginController = (sql) => {
 
       // Verify that the user still exists in the database
       const result =
-        await sql`SELECT id, email, ruolo, stato FROM utenti WHERE id = ${decoded.id}`;
+        await sql`SELECT id, email, ruolo, stato, username FROM utenti WHERE id = ${decoded.id}`;
 
       if (result.length === 0) {
         // Utente non più presente nel database, pulisci il cookie
@@ -54,7 +54,16 @@ const loginController = (sql) => {
         return res.json({ user: null });
       }
 
-      res.json({ user: decoded });
+      const utente = result[0];
+      res.json({
+        user: {
+          id: utente.id,
+          email: utente.email,
+          ruolo: utente.ruolo,
+          username: utente.username,
+          stato: utente.stato
+        }
+      });
     } catch (err) {
       // Invalid or expired token - clear the cookie
       res.clearCookie("token", {
@@ -115,8 +124,7 @@ const loginController = (sql) => {
 
       const isProduction = process.env.NODE_ENV === "production";
       console.log(
-        `[LOGIN] Cookie Configuration - Production: ${isProduction}, SameSite: ${
-          isProduction ? "none" : "lax"
+        `[LOGIN] Cookie Configuration - Production: ${isProduction}, SameSite: ${isProduction ? "none" : "lax"
         }`
       );
 
