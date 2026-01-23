@@ -43,14 +43,27 @@ const sql = neon(process.env.DATABASE_URL); // Use your DATABASE_URL
 socketController(io, sql);
 
 //Enable CORS for all routes
+
 app.use(
   cors({
-    origin: FRONTEND_URL, // Use dynamic URL based on environment
-    credentials: true, // ESSENTIAL: Allows the browser to send cookies to the backend
+    origin: (origin, callback) => {
+      if (!origin) return callback(null, true); // Postman / server-to-server
+
+      if (
+        origin === "https://pwscam.vercel.app" ||
+        origin === "http://localhost:5173"
+      ) {
+        callback(null, true);
+      } else {
+        callback(new Error("Not allowed by CORS"));
+      }
+    },
+    credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
   })
 );
+
 app.use(express.json());
 app.use(cookieParser()); // Enable reading of req.cookies
 
