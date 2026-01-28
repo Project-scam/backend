@@ -5,7 +5,7 @@
 
 const express = require("express");
 const router = express.Router();
-
+const authMiddleware = require("./authMiddleware");
 /**
  * Creates and configures the router for points-related routes.
  * @param {object} sql - The database client instance.
@@ -14,7 +14,11 @@ const router = express.Router();
 const pointsController = (sql) => {
   // POST /points/update
   // Updates a user's points
-  router.post("/update", async (req, res) => {
+
+  console.log("[DEBUG] req.user:", req.user);           // debug
+  console.log("[DEBUG] body email:", req.body.email);   // debug
+
+  router.post("/update", authMiddleware, async (req, res) => {
     try {
       const { email, pointsToAdd } = req.body;
 
