@@ -16,18 +16,18 @@ const pointsController = (sql) => {
   // Updates a user's points
   router.post("/update", async (req, res) => {
     try {
-      const { username, pointsToAdd } = req.body;
+      const { email, pointsToAdd } = req.body;
 
-      if (!username || pointsToAdd === undefined) {
+      if (!email || pointsToAdd === undefined) {
         return res.status(400).json({
-          error: "Username and pointsToAdd are required",
+          error: "Email and pointsToAdd are required",
         });
       }
 
       // ✅ SECURITY: Verify that the authenticated user can only update their own points
       // (or is an admin - to be implemented if necessary)
-      const authenticatedUsername = req.user?.username;
-      if (authenticatedUsername !== username) {
+      const authenticatedEmail = req.user?.email;
+      if (authenticatedEmail !== email) {
         return res.status(403).json({
           error: "Unauthorized: you can only update your own points",
         });
@@ -35,9 +35,9 @@ const pointsController = (sql) => {
 
       // Verify that the user exists
       const user = await sql`
-                SELECT id, username, punti 
+                SELECT id, email, punti 
                 FROM utenti 
-                WHERE username = ${username}
+                WHERE email = ${email}
             `;
 
       if (user.length === 0) {
@@ -52,16 +52,16 @@ const pointsController = (sql) => {
       await sql`
                 UPDATE utenti 
                 SET punti = ${newPoints} 
-                WHERE username = ${username}
+                WHERE email = ${email}
             `;
 
       console.log(
-        `[POINTS] ${username}: ${currentPoints} + ${pointsToAdd} = ${newPoints}`
+        `[POINTS] ${email}: ${currentPoints} + ${pointsToAdd} = ${newPoints}`
       );
 
       res.json({
         success: true,
-        username: username,
+        email,
         previousPoints: currentPoints,
         pointsAdded: pointsToAdd,
         newPoints: newPoints,
@@ -72,16 +72,16 @@ const pointsController = (sql) => {
     }
   });
 
-  // GET /points/:username
+  // GET /points/:email
   // Gets the current points of a user
-  router.get("/:username", async (req, res) => {
+  router.get("/:email", async (req, res) => {
     try {
-      const { username } = req.params;
+      const { email } = req.params;
 
       const user = await sql`
-                SELECT username, punti 
+                SELECT email, punti 
                 FROM utenti 
-                WHERE username = ${username}
+                WHERE email = ${email}
             `;
 
       if (user.length === 0) {
@@ -89,7 +89,7 @@ const pointsController = (sql) => {
       }
 
       res.json({
-        username: user[0].username,
+        email: user[0].email,
         punti: user[0].punti || 0,
       });
     } catch (err) {
