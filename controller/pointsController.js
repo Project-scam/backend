@@ -15,10 +15,11 @@ const pointsController = (sql) => {
   // POST /points/update
   // Updates a user's points
 
-  console.log("[DEBUG] req.user:", req.user);           // debug
-  console.log("[DEBUG] body email:", req.body.email);   // debug
-
   router.post("/update", authMiddleware, async (req, res) => {
+
+    console.log("[DEBUG] req.user:", req.user);           // debug
+    console.log("[DEBUG] body email:", req.body.email);   // debug
+    
     try {
       const { email, pointsToAdd } = req.body;
 
